@@ -6,7 +6,7 @@ import {
   getDiamondLots,
   updateDiamondLot,
 } from "../controllers/DiamondLotController.js";
-import { protectRoute } from "../Middleware/authMiddleware.js";
+import { protectRoute } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
