@@ -144,16 +144,57 @@ export const deleteAttendanceDate = async (req, res) => {
 
 export const getAllAttendance = async (req, res) => {
     try {
-        const data = await Attendance.find().populate("employeeId");
+        let { month, year } = req.query;
+
+        const now = new Date();
+        const selectedMonth = month ? Number(month) : now.getMonth() + 1; // 1–12
+        const selectedYear = year ? Number(year) : now.getFullYear();
+
+        // Month date range
+        const startDate = new Date(selectedYear, selectedMonth - 1, 1);
+        const endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59);
+
+        // ✅ 1️⃣ Fetch employees created ON or BEFORE selected month
+        const employees = await Employee.find({
+            createdAt: { $lte: endDate }, // 🔥 key condition
+            active: true,
+        });
+
+        // ✅ 2️⃣ Fetch attendance docs for those employees
+        const attendanceDocs = await Attendance.find({
+            employeeId: { $in: employees.map(e => e._id) },
+        }).populate("employeeId");
+
+        // ✅ 3️⃣ Merge attendance per employee
+        const result = employees.map(emp => {
+            const attendanceDoc = attendanceDocs.find(
+                a => a.employeeId._id.toString() === emp._id.toString()
+            );
+
+            const monthlyAttendance =
+                attendanceDoc?.attendance.filter(a =>
+                    a.date >= startDate && a.date <= endDate
+                ) || [];
+
+            return {
+                employeeId: emp,
+                attendance: monthlyAttendance, // can be empty
+                remark: attendanceDoc?.remarks || "",
+            };
+        });
 
         res.status(200).json({
             success: true,
-            data,
+            data: result,
+            selectedMonth,
+            selectedYear,
         });
+
     } catch (error) {
+        console.error(error);
         res.status(500).json({
             success: false,
-            message: "Error fetching all attendance",
+            message: "Error fetching attendance",
             error: error.message,
         });
     }
