@@ -75,7 +75,7 @@ flowchart LR
 ### Setup (Local)
 
 ```bash
-git clone https://github.com/LaxitSavaliya/diamond-backendall
+git clone https://github.com/LaxitSavaliya/diamond-backend
 ```
 
 Create `.env`:
